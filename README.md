@@ -1,3 +1,5 @@
+<img width="945" height="540" alt="image" src="https://github.com/user-attachments/assets/f4a577eb-e0f3-4504-8faa-bc8d51be8b39" />
+
 # PURS for PUFp v1.1
 
 This repository provides a lightweight workflow for polymer-unit recognition
