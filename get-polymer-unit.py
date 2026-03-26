@@ -4,6 +4,7 @@
 import argparse
 import csv
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -22,13 +23,14 @@ def load_input_records(csv_path):
     name_counts = Counter()
 
     with open(csv_path, newline="", encoding="utf-8-sig") as file:
-        reader = csv.reader(file)
-        next(reader, None)
+        reader = csv.DictReader(file)
+        if reader.fieldnames is None or "name" not in reader.fieldnames or "smiles" not in reader.fieldnames:
+            raise ValueError("Input csv must contain at least 'name' and 'smiles' columns.")
         for row in reader:
-            if len(row) < 2:
+            if not row.get("name") or not row.get("smiles"):
                 continue
-            name = row[0].strip()
-            smiles = normalize_smiles(row[1].strip())
+            name = row["name"].strip()
+            smiles = normalize_smiles(row["smiles"].strip())
             mol = Chem.MolFromSmiles(smiles)
             if not mol:
                 continue
@@ -115,11 +117,11 @@ def build_neighbor_data(smi_list, name_list):
     return ring_total_list2, total_neighbor_data
 
 
-def write_ring_list(ring_total_list):
-    pd.DataFrame(np.array(ring_total_list)).to_csv("ring_total_list.csv")
+def write_ring_list(ring_total_list, output_dir):
+    pd.DataFrame(np.array(ring_total_list)).to_csv(output_dir / "ring_total_list.csv")
 
 
-def build_fingerprint_tables(ring_total_list, total_neighbor_data, name_list):
+def build_fingerprint_tables(ring_total_list, total_neighbor_data, name_list, output_dir):
     ring_index = {ring: idx for idx, ring in enumerate(ring_total_list)}
     max_nodes = max((len(v) for v in total_neighbor_data.values()), default=0)
     long = len(ring_total_list)
@@ -163,22 +165,25 @@ def build_fingerprint_tables(ring_total_list, total_neighbor_data, name_list):
         node_rows.append(node_matrix.flatten())
         index_rows.append(index_vector)
 
-    pd.DataFrame(np.array(one_hot_rows), index=name_list).to_csv("one_hot.csv")
-    pd.DataFrame(np.array(number_rows), index=name_list).to_csv("number.csv")
-    pd.DataFrame(np.array(adjacent_rows), index=name_list).to_csv("adjacent_matrix.csv")
-    pd.DataFrame(np.array(node_rows), index=name_list).to_csv("node_matrix.csv")
-    pd.DataFrame(index_rows, index=name_list).to_csv("index_data.csv")
+    pd.DataFrame(np.array(one_hot_rows), index=name_list).to_csv(output_dir / "one_hot.csv")
+    pd.DataFrame(np.array(number_rows), index=name_list).to_csv(output_dir / "number.csv")
+    pd.DataFrame(np.array(adjacent_rows), index=name_list).to_csv(output_dir / "adjacent_matrix.csv")
+    pd.DataFrame(np.array(node_rows), index=name_list).to_csv(output_dir / "node_matrix.csv")
+    pd.DataFrame(index_rows, index=name_list).to_csv(output_dir / "index_data.csv")
 
 
-def main(input_csv="test.csv"):
+def main(input_csv="test.csv", output_dir="."):
+    output_dir = Path(output_dir).expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
     smi_list, name_list = load_input_records(input_csv)
     ring_total_list, total_neighbor_data = build_neighbor_data(smi_list, name_list)
-    write_ring_list(ring_total_list)
-    build_fingerprint_tables(ring_total_list, total_neighbor_data, name_list)
+    write_ring_list(ring_total_list, output_dir)
+    build_fingerprint_tables(ring_total_list, total_neighbor_data, name_list, output_dir)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate polymer-unit fingerprints (PUFp) from an input csv.")
     parser.add_argument("input_csv", nargs="?", default="test.csv", help="Input csv file. Default: test.csv")
+    parser.add_argument("--output-dir", default=".", help="Directory used to store generated csv files.")
     args = parser.parse_args()
-    main(args.input_csv)
+    main(args.input_csv, args.output_dir)

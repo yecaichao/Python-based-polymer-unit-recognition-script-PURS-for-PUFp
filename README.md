@@ -21,9 +21,16 @@ and polymer-unit fingerprint (PUFp) generation.
 Place the scripts and the input csv in the same folder, then run:
 
 ```bash
-python get-polymer-unit.py
-python polymer-unit-classify.py
+python get-polymer-unit.py test.csv --output-dir output
+python polymer-unit-classify.py --ring-total-list output/ring_total_list.csv --index-data output/index_data.csv --output-dir output
 ```
+
+## Input format
+
+The input csv is expected to contain at least these columns:
+
+- `name`
+- `smiles`
 
 ## Outputs from `get-polymer-unit.py`
 
@@ -48,7 +55,8 @@ For a validated environment and deployment instructions, see:
 
 ## Notes
 
-- Keep the input csv in the same folder as the scripts unless you modify the file paths in the scripts.
+- `get-polymer-unit.py` now supports `--output-dir` so generated files do not have to be written into the repository root.
+- `polymer-unit-classify.py` now checks that required upstream files exist before running.
 - The current scripts preserve the original workflow logic and output structure.
 
 ## Citation

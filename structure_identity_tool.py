@@ -483,8 +483,7 @@ def pairing(smiles,index_list,l_list,r_list):
             while (r_list[j] < l) or (r_list[j] in cp_ed):
                 j=j+1
         except IndexError:
-            print(smiles)
-            j=j-1
+            raise ValueError(f"Unmatched bracket structure while pairing SMILES: {smiles}")
         r=r_list[j]
         cp_ed.add(r)
         cp=[l,r]

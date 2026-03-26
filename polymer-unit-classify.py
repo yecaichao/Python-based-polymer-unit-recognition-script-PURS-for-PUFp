@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import argparse
+from pathlib import Path
 
 import pandas as pd
 
@@ -89,17 +90,25 @@ def build_type_frame(index_data_path, ring_df):
     return index_frame.applymap(map_polymer_type)
 
 
-def main(ring_total_list_path="ring_total_list.csv", index_data_path="index_data.csv"):
+def main(ring_total_list_path="ring_total_list.csv", index_data_path="index_data.csv", output_dir="."):
+    output_dir = Path(output_dir).expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if not Path(ring_total_list_path).exists():
+        raise FileNotFoundError(f"Missing required input file: {ring_total_list_path}")
+    if not Path(index_data_path).exists():
+        raise FileNotFoundError(f"Missing required input file: {index_data_path}")
+
     ring_df = build_ring_dataframe(ring_total_list_path)
-    ring_df.to_csv("ring_df.csv")
+    ring_df.to_csv(output_dir / "ring_df.csv")
 
     type_frame = build_type_frame(index_data_path, ring_df)
-    type_frame.to_csv("type_frame.csv")
+    type_frame.to_csv(output_dir / "type_frame.csv")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Classify polymer units into PUFp categories.")
     parser.add_argument("--ring-total-list", default="ring_total_list.csv", help="Path to ring_total_list.csv")
     parser.add_argument("--index-data", default="index_data.csv", help="Path to index_data.csv")
+    parser.add_argument("--output-dir", default=".", help="Directory used to store generated csv files.")
     args = parser.parse_args()
-    main(args.ring_total_list, args.index_data)
+    main(args.ring_total_list, args.index_data, args.output_dir)
